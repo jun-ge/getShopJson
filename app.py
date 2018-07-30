@@ -1,9 +1,10 @@
+import json
 import time
 
 from flask import Flask, g, request
 
 from getter import Getter
-from reidsClient import RedisClient
+from redisClient import RedisClient
 
 app = Flask(__name__)
 
@@ -18,11 +19,13 @@ def search():
     if request.method == 'GET':
         q = request.args.get('q')
     conn = redis_conn()
-    jsonStr = conn.getvalue(key=time.strftime("%Y%m%d"))
+    jsonStr = conn.getvalue(key=time.strftime("201807301840"))
+
+    print(jsonStr)
     return jsonStr
 
 
-@app.route('/get', methods=['POST', 'GET'])
+@app.route('/get?', methods=['POST', 'GET'])
 def hello_world():
     if request.method == 'GET':
         q = request.args.get('q')

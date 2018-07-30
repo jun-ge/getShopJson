@@ -24,7 +24,7 @@ class RedisClient(object):
         :param port:
         :return:
         """
-        self.date = time.strftime("%Y%m%d")
+        self.date = time.strftime("%Y%m%d%H%M")
         self.__conn = redis.Redis(host=host, port=port, db=0)
 
     def add(self, jsonData):
