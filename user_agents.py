@@ -6,7 +6,7 @@ import random
 
 __all__ = ['FakeChromeUA']
 
-FIRST_NUM = random.randint(55, 66)
+FIRST_NUM = random.randint(55, 69)
 THIRD_NUM = random.randint(0, 3360)
 FOURTH_NUM = random.randint(0, 140)
 
