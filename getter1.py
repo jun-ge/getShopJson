@@ -17,8 +17,24 @@ from user_agents import FakeChromeUA
 
 
 class Getter:
-    def __init__(self, key='女鞋'):
+    def __init__(self, key=''):
 
+        self.json_base_url = 'https://pub.alimama.com/items/search.json?'
+        self.good_base_url = 'https://item.taobao.com/item.htm?id='
+        self.id = key  # '565043352599'
+        self.params = {
+            'q': self.good_base_url + self.id,
+            # '_t': t - 120000,  # 用户登入时间戳
+            # # 'toPage': page,  # 页数
+            # 'perPageSize': 50,  # 每页展示的数量
+            # 'auctionTag': '',  # 作用未知
+            # 'shopTag': 'yxjh',  # 作用未知
+            # 't': t,  # 最近一次刷新时间戳.精确到毫秒
+            # '_tb_token_': '',  # 通过页面获取
+            # # 'pvid': '10_115.190.248.241_515_1532935589260',  # 10 + ip + 随机数（num) +
+            # 'pvid': '10_115.190.248.241_' + str(random.randint(100, 9999)) + '_' + str(t - 650)
+        }
+        self.url = self.json_base_url + urlencode(self.params)
         self.userAgent = FakeChromeUA().get_ua()
         self.username = '购东goudong'
         # ua字符串，经过淘宝ua算法计算得出，包含了时间戳,浏览器,屏幕分辨率,随机数,鼠标移动,鼠标点击,其实还有键盘输入记录,鼠标移动的记录、点击的记录等等的信息
@@ -84,29 +100,27 @@ class Getter:
             'Accept-Encoding': 'gzip, deflate',
             'Accept-Language': 'zh-CN,zh;q=0.8',
         }
-
-        self.base_url = 'https://pub.alimama.com/items/search.json?'
         self.conn = RedisClient()
+        first_cookie = '_tb_token_=7e647ea05db3e;t=8e5fa575483742d8786a8135ba0bc7e5;sg=g6d;cna=I53pExmQ9x4CAdOhpzc6kHm0;cookie2=1178a3d8e8e81c239c1ffbbcdd6d6f41;_l_g_=Ug%3D%3D;v=0;uc1=cookie16=WqG3DMC9UpAPBHGz5QBErFxlCA%3D%3D&cookie21=URm48syIZxx%2F&cookie15=UIHiLt3xD8xYTw%3D%3D&existShop=false&pas=0&cookie14=UoTfKLc15RWtbQ%3D%3D&tag=8&lng=zh_CN;unb=2849487666;skt=4811356f98ad5077;cookie1=VyguQNX5qXZE3MdCEK3QrrKVkZUz5Q2XbyEaXQJSV7k%3D;csg=459ed28a;uc3=vt3=F8dBzrmTfpLAPFz4lyc%3D&id2=UUBc8nM%2F1bcGiQ%3D%3D&nk2=2jUtnF6NttehK5M%3D&lg2=Vq8l%2BKCLz3%2F65A%3D%3D;existShop=MTUzMzE5NDMyNQ%3D%3D;tracknick=%5Cu8D2D%5Cu4E1Cgoudong;lgc=%5Cu8D2D%5Cu4E1Cgoudong;_cc_=WqG3DMC9EA%3D%3D;mt=ci=45_1;dnk=%5Cu8D2D%5Cu4E1Cgoudong;_nk_=%5Cu8D2D%5Cu4E1Cgoudong;cookie17=UUBc8nM%2F1bcGiQ%3D%3D;tg=0;_mw_us_time_=1533194326558;thw=cn;isg=BJ-foGrlODRN3Twojj5yrLbRJfPprPkadVpdcTHsO86VwL9COdSD9h2Shhkb2Mse'
+        self.cookie = self.conn.get_cookie() if self.conn.get_cookie() else self.conn.add_cookie(first_cookie)
+        print('cookie为：', self.conn.get_cookie())
         self.key = key
 
-    def getTaobaoCookie(self):
-        taobao = Taobao()
-        taobao.main()
-
     def getCookie(self, username='购东goudong', passwd='gd19691818'):
+        count = 1
         # 模拟浏览器登入
         from selenium import webdriver
         from selenium.common.exceptions import TimeoutException
         from selenium.webdriver.common.by import By
         from selenium.webdriver.support import expected_conditions as EC
         from selenium.webdriver.support.wait import WebDriverWait
-        # url = 'https://pub.alimama.com/'
-        url = 'https://login.taobao.com/member/login.jhtml?'
-        # url = 'https://www.alimama.com/member/login.htm'
 
-        # chrome_options = webdriver.ChromeOptions()
-        # chrome_options.add_argument('--headless')# 隐藏界面
-        # browser = webdriver.Chrome(chrome_options=chrome_options)
+        url = 'https://login.taobao.com/member/login.jhtml?'
+
+
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.add_argument('--headless')  # 隐藏界面
+        browser = webdriver.Chrome(chrome_options=chrome_options)
 
         # 添加请求头信息
         # dcap = dict(DesiredCapabilities.CHROME)
@@ -114,10 +128,8 @@ class Getter:
         # browser = webdriver.Chrome(desired_capabilities=dcap)
         # browser = webdriver.Chrome()
         # browser = webdriver.Ie(desired_capabilities=dcap)
-        browser = webdriver.Ie()# ie 浏览器
-
+        # browser = webdriver.Ie()# ie 浏览器
         wait = WebDriverWait(browser, 10)
-
         browser.get(url)
         browser.maximize_window()
 
@@ -126,7 +138,7 @@ class Getter:
             EC.element_to_be_clickable((By.CSS_SELECTOR, '#J_Quick2Static')))
 
         element.click()
-        time.sleep(1)
+        # time.sleep(1)
 
         # 获取输入用户名、密码，已及登入的按钮
         input_username = wait.until(
@@ -139,11 +151,11 @@ class Getter:
         # 清空输入框里面的内容
         input_username.clear()
         input_passwd.clear()
-        time.sleep(1)
+        # time.sleep(random.random())
         # 填写用户名，密码数据
         input_username.send_keys(username)
         input_passwd.send_keys(passwd)
-        time.sleep(1)
+        # time.sleep(random.random())
 
         # 循环拖动验证码，若没有出现‘哎呀。。。’字样表示验证通过，中断循环
         while True:
@@ -152,27 +164,29 @@ class Getter:
                 EC.presence_of_element_located(
                     (By.CSS_SELECTOR, '#nc_1_n1z')))
             action = ActionChains(browser)
-            action.click_and_hold(slider)# 点击并按住
+            # action.click_and_hold(slider)# 点击并按住
             for index in range(10):
                 try:
-                    action.move_by_offset(index * 50, 0).perform()
+                    # action.move_by_offset(index * 50, 0).perform()
                     # 水平拖动500
-                    # action.drag_and_drop_by_offset(slider, 500, 0).perform()  # 平滑
+                    action.drag_and_drop_by_offset(slider, 500, 0).perform()  # 平滑
                 except Exception:
                     # 拖动超过报异常，中断循环
                     break
-            action.release().perform()
+            # action.release().perform()
             error = pyquery.PyQuery(browser.page_source)('.nc-lang-cnt').text()
             print(error)
 
             if error.startswith('哎呀'):
+                count += 1
+                print('--------------------------------------第%s次尝试' % count)
                 restart = wait.until(
                     EC.element_to_be_clickable((By.CSS_SELECTOR, '#nocaptcha > div > span > a')))
                 restart.click()
-                time.sleep(1)
+                # time.sleep(random.random())
             else:
                 break
-        time.sleep(1)
+        # time.sleep(random.random())
         submit = wait.until(
             EC.element_to_be_clickable(
                 (By.CSS_SELECTOR, '#J_SubmitStatic')))
@@ -181,50 +195,46 @@ class Getter:
         cookie = [item["name"] + "=" + item["value"] for item in browser.get_cookies()]
         cookiestr = ';'.join(item for item in cookie)
         print(cookiestr)
+        self.cookie = cookiestr
         return cookiestr
 
     def run(self):
         # jsonData = json.dumps([self.getJson(page) for page in range(1, 101)], ensure_ascii=False)
-        jsonData = self.getJson(1)
+        jsonData = self.getJson()
         self.conn.add(jsonData)
         return jsonData
 
-    def getJson(self, page):
-        # self.headers['cookie'] = self.getTaobaoCookie()
-        cookie =  self.getTaobaoCookie()
+    def is_userable_cookie(self, cookie):
+        print('正在判断cookie是否可用。。。')
+        self.headers['cookie'] = cookie
+        s = requests.session()
+        res = s.get(self.url, headers=self.headers)
+        result = res.json()
+        print(type(result), result)
+        if 'rgv587_flag' in result:
+            #self.conn.del_cookie()
+            print('不可用，正在更新cookie')
+            return False
+        elif result['ok'] == 'true' or result['data'] != None:
+            print('可用，存储cookie')
+            self.conn.add_cookie(cookie)
+            return json.dumps(res.json(), ensure_ascii=False)
+        else:
+            print('不可用，正在更新cookie')
+            #self.conn.del_cookie()
+            return False
 
-        t = int(time.time() * 1000)
-        params = {
-            'q': self.key,
-            '_t': t - 120000,  # 用户登入时间戳
-            'toPage': page,  # 页数
-            'perPageSize': 50,  # 每页展示的数量
-            'auctionTag': None,  # 作用未知
-            'shopTag': 'yxjh',  # 作用未知
-            't': t,  # 最近一次刷新时间戳.精确到毫秒
-            '_tb_token_': '',  # 通过页面获取
-            # 'pvid': '10_115.190.248.241_515_1532935589260',  # 10 + ip + 随机数（num) +
-            'pvid': '10_115.190.248.241_' + str(random.randint(100, 9999)) + '_' + str(t - 650)
-        }
-        import re
-        source = requests.get('https://pub.alimama.com/').text
-        token_list = re.findall(r"input name='_tb_token_' type='hidden' value='([a-zA-Z0-9]+)'", source)
-        params['_tb_token_'] = token_list[0] if token_list else ''
+    def getJson(self):
+        # 判断从redis获取的cookie是否可用，若可用直接返回获取的json，若不可用则一直尝试获取新的cookie
+        result = self.is_userable_cookie(self.cookie)
+        while not result:
+            self.cookie = self.getCookie()
+            result = self.is_userable_cookie(self.cookie)
 
-        url = self.base_url + urlencode(params)
-        print(url)
-        try:
-            s = requests.session()
-            res = s.get(url, headers=self.headers, data=self.post, cookies=cookie)
-            print(res.headers)
-
-            if res.status_code == 200:
-                return json.dumps(res.json(), ensure_ascii=False)
-        except TimeoutError:
-            print('connect timeout')
+        return result
 
 
 if __name__ == '__main__':
     # print(time.time())
-    print(Getter().getCookie())
-    # print(Getter().run())
+    # print(Getter().getCookie())
+    print(Getter().run())

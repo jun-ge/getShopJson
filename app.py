@@ -1,9 +1,9 @@
-import json
+
 import time
 
-from flask import Flask, g, request
+from flask import Flask, g, request, render_template
 
-from getter import Getter
+from getter1 import Getter
 from redisClient import RedisClient
 
 app = Flask(__name__)
@@ -13,25 +13,36 @@ def redis_conn():
         g.redis = RedisClient()
     return g.redis
 
+@app.route('/', methods=['POST', 'GET'])
+def index():
 
-@app.route('/search', methods=['POST', 'GET'])
-def search():
-    if request.method == 'GET':
-        q = request.args.get('q')
+    return render_template('get_json.html')
+
+
+
+@app.route('/result', methods=['POST', 'GET'])
+def result():
+    if request.method == 'POST':
+        key = request.form.get('key')
+        print(key)
     conn = redis_conn()
-    jsonStr = conn.getvalue(key=time.strftime("201807301840"))
+    jsonStr = Getter(key).run()
 
-    print(jsonStr)
+    conn.add(jsonStr)
     return jsonStr
 
 
-@app.route('/get?', methods=['POST', 'GET'])
-def hello_world():
-    if request.method == 'GET':
-        q = request.args.get('q')
-    jsonStr = Getter(q).run()
+@app.route('/get', methods=['POST', 'GET'])
+def get():
+    conn = redis_conn()
+    jsonStr = conn.getvalue(key=time.strftime("%Y%m%d%H"))
     return jsonStr
+
+
+
 
 
 if __name__ == '__main__':
-    app.run(allow='0.0.0.0', debug=True)
+    # app.run(host='0.0.0.0', debug=True, port=5001)
+    # manage.run()
+    app.run()
