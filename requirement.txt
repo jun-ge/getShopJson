@@ -22,6 +22,6 @@ selenium==3.13.0
 six==1.11.0
 threadpool==1.3.2
 tzlocal==1.5.1
-urllib3==1.23
+urllib3==1.26.5
 Werkzeug==0.11.15
 yarl==1.2.6
